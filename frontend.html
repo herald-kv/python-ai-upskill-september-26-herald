@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- Design tokens (light + dark) ---------- */
+    :root {
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --surface-muted: #f9fafb;
+      --border: #e4e7ec;
+      --text: #101828;
+      --text-muted: #667085;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --focus: rgba(79, 70, 229, 0.25);
+      --happy: #067647;   --happy-bg: #ecfdf3;
+      --sad: #b42318;     --sad-bg: #fef3f2;
+      --neutral: #475467; --neutral-bg: #f2f4f7;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
+      --radius: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0f17;
+        --surface: #131a26;
+        --surface-muted: #182131;
+        --border: #263144;
+        --text: #eef1f6;
+        --text-muted: #98a2b3;
+        --primary: #818cf8;
+        --primary-hover: #a5b4fc;
+        --primary-soft: #1e2140;
+        --focus: rgba(129, 140, 248, 0.3);
+        --happy: #75e0a7;   --happy-bg: #0f2a1e;
+        --sad: #fda29b;     --sad-bg: #2d1414;
+        --neutral: #cfd4dc; --neutral-bg: #1f2735;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    /* ---------- Base ---------- */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea { font: inherit; color: inherit; }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar-inner {
+      max-width: 1100px; margin: 0 auto; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
+    .brand-logo {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--primary); color: #fff;
+      display: grid; place-items: center; font-size: 0.9rem;
+    }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+      padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+    .status.online .status-dot { background: #12b76a; box-shadow: 0 0 0 3px rgba(18, 183, 106, 0.2); }
+    .status.offline .status-dot { background: #f04438; box-shadow: 0 0 0 3px rgba(240, 68, 56, 0.2); }
+
+    /* ---------- Layout ---------- */
+    main {
+      max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px;
+      display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .card-header { padding: 20px 24px 0; }
+    .card-header h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .card-header p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.875rem; }
+    .card-body { padding: 20px 24px 24px; }
+    .composer { position: sticky; top: 88px; }
+    @media (max-width: 860px) { .composer { position: static; } }
+
+    /* ---------- Form ---------- */
+    .field + .field { margin-top: 20px; }
+    .label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px; }
+
+    .mood-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border: 0; padding: 0; margin: 0; }
+    .mood-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .mood-option label {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 12px 8px; border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; background: var(--surface-muted);
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .mood-option label:hover { border-color: var(--text-muted); }
+    .mood-face { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1.25rem; font-weight: 700; }
+    .mood-name { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+    .mood-option input:focus-visible + label { box-shadow: 0 0 0 4px var(--focus); }
+    .mood-option input:checked + label { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 1px var(--primary); }
+    .mood-option input:checked + label .mood-name { color: var(--text); }
+
+    textarea {
+      width: 100%; min-height: 150px; resize: vertical;
+      padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    textarea::placeholder { color: var(--text-muted); }
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--focus); }
+    .field-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.8rem; color: var(--text-muted); }
+    .counter.warn { color: #dc6803; }
+    .counter.limit { color: #d92d20; font-weight: 600; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 0; border-radius: 10px; padding: 11px 18px;
+      font-weight: 600; font-size: 0.925rem; cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary { width: 100%; margin-top: 20px; background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--focus); }
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    .btn.loading .spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      margin-top: 16px; padding: 12px 14px; border-radius: 10px;
+      font-size: 0.875rem; display: none; border: 1px solid transparent;
+    }
+    .alert.success { display: block; background: var(--happy-bg); color: var(--happy); border-color: color-mix(in srgb, var(--happy) 25%, transparent); }
+    .alert.error { display: block; background: var(--sad-bg); color: var(--sad); border-color: color-mix(in srgb, var(--sad) 25%, transparent); }
+
+    /* ---------- Entries ---------- */
+    .entries-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+    .tabs { display: inline-flex; padding: 3px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 10px; gap: 2px; flex-wrap: wrap; }
+    .tab {
+      border: 0; background: transparent; padding: 6px 12px; border-radius: 7px;
+      font-size: 0.825rem; font-weight: 500; color: var(--text-muted); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+    .tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); }
+    .tab-count { font-size: 0.72rem; padding: 0 6px; border-radius: 999px; background: var(--border); color: var(--text-muted); }
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; font-size: 0.825rem; font-weight: 500; color: var(--text-muted);
+    }
+    .icon-btn:hover { color: var(--text); }
+
+    .entry-list { list-style: none; margin: 0; padding: 0; }
+    .entry { padding: 16px 0; border-top: 1px solid var(--border); display: flex; gap: 14px; }
+    .entry:first-child { border-top: 0; padding-top: 4px; }
+    .entry-face {
+      flex: none; width: 40px; height: 40px; border-radius: 10px;
+      display: grid; place-items: center;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700;
+    }
+    .entry-content { min-width: 0; flex: 1; }
+    .entry-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .entry-meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.78rem; color: var(--text-muted); }
+    .badge { padding: 1px 8px; border-radius: 999px; font-weight: 600; font-size: 0.72rem; text-transform: capitalize; }
+    .mood-happy { background: var(--happy-bg); color: var(--happy); }
+    .mood-sad { background: var(--sad-bg); color: var(--sad); }
+    .mood-neutral { background: var(--neutral-bg); color: var(--neutral); }
+
+    .empty { text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 0.9rem; }
+    .empty strong { display: block; color: var(--text); font-size: 1rem; margin-bottom: 4px; }
+
+    .kbd { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">SJ</div>
+        Secret Journal
+      </div>
+      <span id="api-status" class="status" role="status">
+        <span class="status-dot"></span><span id="api-status-text">Checking API…</span>
+      </span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Composer: write a new entry -->
+    <section class="card composer" aria-labelledby="composer-title">
+      <div class="card-header">
+        <h2 id="composer-title">New entry</h2>
+        <p>Write down how your day went.</p>
+      </div>
+      <form class="card-body" id="entry-form" novalidate>
+        <div class="field">
+          <span class="label" id="mood-label">How do you feel today?</span>
+          <fieldset class="mood-group" aria-labelledby="mood-label">
+            <div class="mood-option">
+              <input type="radio" name="mood" id="mood-happy" value="happy">
+              <label for="mood-happy"><span class="mood-face">:)</span><span class="mood-name">Happy</span></label>
+            </div>
+            <div class="mood-option">
+              <input type="radio" name="mood" id="mood-neutral" value="neutral">
+              <label for="mood-neutral"><span class="mood-face">:|</span><span class="mood-name">Neutral</span></label>
+            </div>
+            <div class="mood-option">
+              <input type="radio" name="mood" id="mood-sad" value="sad">
+              <label for="mood-sad"><span class="mood-face">:(</span><span class="mood-name">Sad</span></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="field">
+          <label class="label" for="entry">Journal entry</label>
+          <textarea id="entry" maxlength="500" placeholder="Today I learned FastAPI. It feels great!"></textarea>
+          <div class="field-meta">
+            <span><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> to save</span>
+            <span class="counter" id="counter">0 / 500</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Save entry</span>
+        </button>
+        <div id="result" class="alert" role="alert" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <!-- Entries: list saved entries with a sentiment filter -->
+    <section class="card" aria-labelledby="entries-title">
+      <div class="card-header entries-toolbar">
+        <div>
+          <h2 id="entries-title">Your entries</h2>
+          <p id="entries-subtitle">Newest first</p>
+        </div>
+        <button class="icon-btn" type="button" onclick="refreshEntries()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="tabs" role="tablist" aria-label="Filter by sentiment">
+          <button class="tab active" role="tab" data-filter="">All <span class="tab-count" data-count="all">0</span></button>
+          <button class="tab" role="tab" data-filter="positive">Positive <span class="tab-count" data-count="positive">0</span></button>
+          <button class="tab" role="tab" data-filter="neutral">Neutral <span class="tab-count" data-count="neutral">0</span></button>
+          <button class="tab" role="tab" data-filter="negative">Negative <span class="tab-count" data-count="negative">0</span></button>
+        </div>
+        <ul class="entry-list" id="entries" style="margin-top: 16px;"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "http://localhost:8000";
+    const MAX_LENGTH = 500;
+
+    const form = document.getElementById("entry-form");
+    const entryInput = document.getElementById("entry");
+    const counter = document.getElementById("counter");
+    const submitBtn = document.getElementById("submit-btn");
+    const resultBox = document.getElementById("result");
+    const entryList = document.getElementById("entries");
+
+    let activeFilter = "";
+
+    // ---------- Helpers ----------
+
+    // Show a success or error message under the form.
+    function showResult(text, isSuccess) {
+      resultBox.textContent = text;
+      resultBox.className = `alert ${isSuccess ? "success" : "error"}`;
+    }
+
+    // Reflect whether the API answered on the status pill in the top bar.
+    function setApiStatus(isOnline) {
+      document.getElementById("api-status").className = `status ${isOnline ? "online" : "offline"}`;
+      document.getElementById("api-status-text").textContent = isOnline ? "API online" : "API offline";
+    }
+
+    // Build the empty/error placeholder shown in the entries list.
+    function renderEmpty(title, subtitle) {
+      entryList.innerHTML = "";
+      const li = document.createElement("li");
+      li.className = "empty";
+      const strong = document.createElement("strong");
+      strong.textContent = title;
+      li.append(strong, subtitle);
+      entryList.appendChild(li);
+    }
+
+    // Render one entry. textContent is used so user text is never parsed as HTML.
+    function renderEntry(item) {
+      const li = document.createElement("li");
+      li.className = "entry";
+
+      const face = document.createElement("div");
+      face.className = `entry-face mood-${item.mood}`;
+      face.textContent = item.mood_symbol;
+
+      const content = document.createElement("div");
+      content.className = "entry-content";
+
+      const text = document.createElement("p");
+      text.className = "entry-text";
+      text.textContent = item.entry;
+
+      const meta = document.createElement("div");
+      meta.className = "entry-meta";
+      const badge = document.createElement("span");
+      badge.className = `badge mood-${item.mood}`;
+      badge.textContent = item.mood;
+      const time = document.createElement("span");
+      time.textContent = `${item.timestamp} · #${item.id}`;
+      meta.append(badge, time);
+
+      content.append(text, meta);
+      li.append(face, content);
+      return li;
+    }
+
+    // ---------- Character counter ----------
+    function updateCounter() {
+      const length = entryInput.value.length;
+      counter.textContent = `${length} / ${MAX_LENGTH}`;
+      counter.className = "counter" + (length >= MAX_LENGTH ? " limit" : length >= MAX_LENGTH * 0.9 ? " warn" : "");
+    }
+    entryInput.addEventListener("input", updateCounter);
+
+    // Ctrl/Cmd + Enter submits the form from the textarea.
+    entryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) form.requestSubmit();
+    });
+
+    // ---------- POST /journal ----------
+    async function submitEntry(event) {
+      event.preventDefault();
+      const entry = entryInput.value;
+      const selectedMood = form.querySelector('input[name="mood"]:checked');
+
+      // Quick checks for instant feedback; the API validates again regardless.
+      if (!selectedMood) return showResult("Please choose how you feel today.", false);
+      if (!entry.trim()) return showResult("Journal entry cannot be empty.", false);
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add("loading");
+
+      try {
+        const response = await fetch(`${API_BASE}/journal`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entry, mood: selectedMood.value })
+        });
+        const result = await response.json();
+        setApiStatus(true);
+
+        if (response.ok) {
+          showResult(`${result.message} Entry #${result.data.id} saved as ${result.data.mood} ${result.data.mood_symbol}`, true);
+          form.reset();
+          updateCounter();
+          refreshEntries();
+        } else {
+          showResult(result.message || "Something went wrong.", false);
+        }
+      } catch (error) {
+        // fetch() only throws when the server can't be reached at all.
+        setApiStatus(false);
+        showResult("Could not reach the API. Is the server running on port 8000?", false);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("loading");
+      }
+    }
+    form.addEventListener("submit", submitEntry);
+
+    // ---------- GET /journal ----------
+
+    // Fetch entries, using the API's sentiment_filter query param when set.
+    async function fetchEntries(filter) {
+      const url = filter ? `${API_BASE}/journal?sentiment_filter=${filter}` : `${API_BASE}/journal`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error((await response.json()).message);
+      return response.json();
+    }
+
+    // Update the count badges on each filter tab.
+    function updateCounts(allEntries) {
+      const counts = { all: allEntries.length, positive: 0, neutral: 0, negative: 0 };
+      allEntries.forEach((item) => counts[item.sentiment]++);
+      document.querySelectorAll("[data-count]").forEach((el) => {
+        el.textContent = counts[el.dataset.count];
+      });
+    }
+
+    async function refreshEntries() {
+      try {
+        const [allEntries, visible] = await Promise.all([
+          fetchEntries(""),
+          activeFilter ? fetchEntries(activeFilter) : null
+        ]);
+        setApiStatus(true);
+        updateCounts(allEntries);
+
+        const entries = (visible ?? allEntries).slice().reverse();
+        if (entries.length === 0) {
+          return activeFilter
+            ? renderEmpty("No matching entries", `Nothing tagged ${activeFilter} yet.`)
+            : renderEmpty("No entries yet", "Your first journal entry will appear here.");
+        }
+        entryList.replaceChildren(...entries.map(renderEntry));
+      } catch (error) {
+        setApiStatus(false);
+        renderEmpty("Could not load entries", "Start the server with: uvicorn src.api.main:app --reload");
+      }
+    }
+
+    // Switch filter tab and reload the list.
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        activeFilter = tab.dataset.filter;
+        refreshEntries();
+      });
+    });
+
+    refreshEntries();
+  </script>
+</body>
+</html>

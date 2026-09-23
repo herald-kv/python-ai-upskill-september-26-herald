@@ -1,3 +1,12 @@
+# Journal data stays private; the folder itself is kept via data/.gitkeep
+data/journal.csv
 journal.csv
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Course task PDFs
+tasks/
